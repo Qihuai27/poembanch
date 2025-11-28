@@ -1,0 +1,18 @@
+# API Model: Alibaba Qwen (via DashScope)
+# Example configuration for Qwen API
+
+model_name: "qwen-turbo"
+model_type: "qwen_api"
+
+# API settings
+api_key: "$DASHSCOPE_API_KEY"  # Use environment variable
+api_model_name: "qwen-turbo"
+
+# Generation parameters
+max_new_tokens: 128
+temperature: 0.1
+top_p: 0.9
+
+# Evaluation settings
+data_dir: "./data"
+output_dir: "./results"

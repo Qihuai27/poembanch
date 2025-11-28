@@ -2,6 +2,22 @@
 
 PoemBench 是一个中文古典诗词基准测试框架，用于评估大语言模型在诗词理解任务上的表现。
 
+**[Contributors 林雨夜]**<sup>1*†</sup>&ensp; http://lyy0323.space
+**[Contributors 抱木]**<sup>2</sup>&ensp;
+
+**致谢：** 上海交大国学社全体驻站诗人
+
+<sup>1</sup>SJTU&emsp;<sup>2</sup>IIE
+
+<br>
+<small>* <b>Dataset Collection Lead</b> &emsp; † <b>Q&A Design Lead</b></small>
+
+[![Paper]()](link)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue)](link)
+
+</div>
+
+
 ## 特性
 
 - 支持本地模型（HuggingFace Transformers）和多种 API 模型
@@ -275,7 +291,3 @@ poembanch/
 ├── data/                    # 数据集
 └── results/                 # 评估结果
 ```
-
-## License
-
-MIT

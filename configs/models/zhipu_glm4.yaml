@@ -1,0 +1,18 @@
+# API Model: Zhipu GLM-4
+# Example configuration for Zhipu AI (GLM) API
+
+model_name: "glm-4"
+model_type: "zhipu"
+
+# API settings
+api_key: "$ZHIPUAI_API_KEY"  # Use environment variable
+api_model_name: "glm-4"
+
+# Generation parameters
+max_new_tokens: 128
+temperature: 0.1
+top_p: 0.9
+
+# Evaluation settings
+data_dir: "./data"
+output_dir: "./results"

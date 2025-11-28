@@ -1,0 +1,21 @@
+# Local Model: Qwen3-4B
+# Example configuration for evaluating a local HuggingFace model
+
+model_name: "qwen3-4b"
+model_type: "local"
+
+# Model path (relative or absolute)
+model_path: "./models/Qwen3-4B"
+
+# Device settings
+device: "auto"  # auto, cuda, cpu
+torch_dtype: "float16"  # float16, bfloat16, float32
+
+# Generation parameters
+max_new_tokens: 128
+temperature: 0.1
+top_p: 0.9
+
+# Evaluation settings
+data_dir: "./data"
+output_dir: "./results"

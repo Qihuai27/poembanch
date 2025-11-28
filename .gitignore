@@ -81,7 +81,7 @@ venv.bak/
 __MACOSX/
 
 # Model weights and checkpoints (do not upload large model files)
-models/
+model/
 *.bin
 *.safetensors
 *.gguf

@@ -1,0 +1,18 @@
+# API Model: Anthropic Claude
+# Example configuration for Anthropic Claude API
+
+model_name: "claude-3-5-sonnet"
+model_type: "anthropic"
+
+# API settings
+api_key: "$ANTHROPIC_API_KEY"  # Use environment variable
+api_model_name: "claude-3-5-sonnet-20241022"
+
+# Generation parameters
+max_new_tokens: 128
+temperature: 0.1
+top_p: 0.9
+
+# Evaluation settings
+data_dir: "./data"
+output_dir: "./results"

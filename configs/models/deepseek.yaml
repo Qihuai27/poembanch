@@ -1,0 +1,19 @@
+# API Model: DeepSeek
+# Example configuration for DeepSeek API
+
+model_name: "deepseek-chat"
+model_type: "deepseek"
+
+# API settings
+api_key: "$DEEPSEEK_API_KEY"  # Use environment variable
+api_base: "https://api.deepseek.com"
+api_model_name: "deepseek-chat"
+
+# Generation parameters
+max_new_tokens: 128
+temperature: 0.1
+top_p: 0.9
+
+# Evaluation settings
+data_dir: "./data"
+output_dir: "./results"

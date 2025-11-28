@@ -1,0 +1,19 @@
+# API Model: OpenAI GPT-4o
+# Example configuration for OpenAI API
+
+model_name: "gpt-4o"
+model_type: "openai"
+
+# API settings
+api_key: "$OPENAI_API_KEY"  # Use environment variable
+api_base: null  # Use default OpenAI endpoint
+api_model_name: "gpt-4o"
+
+# Generation parameters
+max_new_tokens: 128
+temperature: 0.1
+top_p: 0.9
+
+# Evaluation settings
+data_dir: "./data"
+output_dir: "./results"
