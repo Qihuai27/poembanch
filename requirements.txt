@@ -1,0 +1,13 @@
+# Core dependencies
+torch>=2.0.0
+transformers>=4.35.0
+tqdm>=4.64.0
+
+# Config management
+pyyaml>=6.0
+
+# API clients (optional, install as needed)
+# openai>=1.0.0
+# anthropic>=0.18.0
+# zhipuai>=2.0.0
+# dashscope>=1.14.0

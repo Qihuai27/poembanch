@@ -1,0 +1,16 @@
+# Evaluation Configuration: Standard Tasks
+# Evaluate on all standard variant datasets
+
+# Dataset selection
+datasets:
+  - "tang.guess_author.standard"
+  - "tang.guess_word.standard"
+  - "tang.match_sentence.standard"
+  - "tang.sort_poem.jue"
+  - "tang.sort_poem.lyu"
+  - "song.guess_ci_tone.standard"
+
+# Evaluation settings
+max_samples: null  # null for all samples
+data_dir: "./data"
+output_dir: "./results"

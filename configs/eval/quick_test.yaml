@@ -1,0 +1,12 @@
+# Evaluation Configuration: Quick Test
+# For quick testing with limited samples
+
+# Dataset selection
+datasets:
+  - "tang.guess_author.standard"
+  - "tang.guess_word.standard"
+
+# Evaluation settings
+max_samples: 10  # Only 10 samples per dataset
+data_dir: "./data"
+output_dir: "./results"

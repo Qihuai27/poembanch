@@ -1,0 +1,10 @@
+# Evaluation Configuration: Full Benchmark
+# Comprehensive evaluation on all datasets
+
+# Dataset selection (null means all datasets)
+datasets: null
+
+# Evaluation settings
+max_samples: null
+data_dir: "./data"
+output_dir: "./results"
