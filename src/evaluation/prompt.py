@@ -193,16 +193,18 @@ class ResponseParser:
                             is_correct = answer == correct_answer
                             return answer, True, is_correct
 
-        # Strategy 3: Look for "答案：XXXX" pattern
+        # Strategy 3: Look for the LAST "答案" keyword followed by sequence
+        # This prioritizes the final answer in CoT responses
         patterns = [
             r'答案[:：]\s*([1-' + str(num_items) + r']{' + str(num_items) + r'})',
-            r'答案[:：]\s*([1-' + str(num_items) + r'](?:[,，、\s]*[1-' + str(num_items) + r']){' + str(num_items - 1) + r'})',
+            r'答案[:：]\s*([1-' + str(num_items) + r'](?:[,，、\s-]*[1-' + str(num_items) + r']){' + str(num_items - 1) + r'})',
         ]
 
         for pattern in patterns:
-            match = re.search(pattern, response)
-            if match:
-                seq = match.group(1)
+            # Use findall to get all matches, then take the last one
+            matches = re.findall(pattern, response)
+            if matches:
+                seq = matches[-1]  # Take the LAST match
                 # Clean separators
                 digits = re.findall(r'\d', seq)
                 if len(digits) == num_items:
@@ -212,15 +214,33 @@ class ResponseParser:
                         is_correct = answer == correct_answer
                         return answer, True, is_correct
 
-        # Strategy 4: Extract first num_items valid digits
-        all_digits = re.findall(r'[1-' + str(num_items) + r']', response)
-        if len(all_digits) >= num_items:
-            digits = all_digits[:num_items]
-            numbers = [int(d) for d in digits]
-            if set(numbers) == set(range(1, num_items + 1)):
-                answer = "".join(digits)
-                is_correct = answer == correct_answer
-                return answer, True, is_correct
+        # Strategy 4: Extract LAST num_items valid digits with proximity constraint
+        # Only accept digits that are close together (max 3 chars apart)
+        # This avoids matching scattered digits in thinking process
+        digit_pattern = r'[1-' + str(num_items) + r']'
+        matches = list(re.finditer(digit_pattern, response))
+
+        if len(matches) >= num_items:
+            # Try to find a valid sequence from the END of response
+            # Check sequences starting from the last possible position
+            for start_idx in range(len(matches) - num_items, -1, -1):
+                candidate_matches = matches[start_idx:start_idx + num_items]
+
+                # Check proximity: max gap between adjacent digits <= 3 characters
+                valid_proximity = True
+                for i in range(len(candidate_matches) - 1):
+                    gap = candidate_matches[i + 1].start() - candidate_matches[i].end()
+                    if gap > 3:
+                        valid_proximity = False
+                        break
+
+                if valid_proximity:
+                    digits = [m.group() for m in candidate_matches]
+                    numbers = [int(d) for d in digits]
+                    if set(numbers) == set(range(1, num_items + 1)):
+                        answer = "".join(digits)
+                        is_correct = answer == correct_answer
+                        return answer, True, is_correct
 
         # No valid sequence found - instruction not followed
         return "", False, False
