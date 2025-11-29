@@ -53,6 +53,8 @@ def parse_args():
     # Other options
     parser.add_argument("--no-save", action="store_true", help="Don't save results")
     parser.add_argument("--no-details", action="store_true", help="Don't save detailed results")
+    parser.add_argument("--no-save-responses", action="store_true",
+                        help="Disable real-time response saving (enabled by default)")
 
     return parser.parse_args()
 
@@ -133,7 +135,8 @@ def main():
     pipeline = EvaluationPipeline(
         model=model,
         data_dir=config.get("data_dir", "./data"),
-        output_dir=config.get("output_dir", "./results")
+        output_dir=config.get("output_dir", "./results"),
+        save_responses=not args.no_save_responses
     )
 
     # Run evaluation

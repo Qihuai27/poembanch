@@ -21,7 +21,8 @@ class EvaluationPipeline:
         self,
         model: BaseModel,
         data_dir: str = "./data",
-        output_dir: str = "./results"
+        output_dir: str = "./results",
+        save_responses: bool = False
     ):
         """
         Initialize evaluation pipeline.
@@ -30,10 +31,12 @@ class EvaluationPipeline:
             model: Model to evaluate.
             data_dir: Directory containing datasets.
             output_dir: Directory for output results.
+            save_responses: Whether to save responses in real-time after each sample.
         """
         self.model = model
         self.data_dir = data_dir
         self.output_dir = output_dir
+        self.save_responses = save_responses
 
         self.dataset_loader = DatasetLoader(data_dir)
         self.prompt_builder = PromptBuilder()
@@ -43,6 +46,74 @@ class EvaluationPipeline:
         # Create model-specific output directory
         self.model_output_dir = os.path.join(output_dir, model.name)
         os.makedirs(self.model_output_dir, exist_ok=True)
+
+        # Real-time responses: one file per dataset
+        self._responses_dir = None
+        self._responses_files = {}  # dataset_name -> file_path
+        if self.save_responses:
+            self._init_responses_dir()
+
+    def _init_responses_dir(self) -> None:
+        """Initialize the responses directory."""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self._responses_dir = os.path.join(
+            self.model_output_dir, f"responses_{timestamp}"
+        )
+        os.makedirs(self._responses_dir, exist_ok=True)
+        print(f"Real-time responses will be saved to: {self._responses_dir}/")
+
+    def _get_responses_file(self, dataset_name: str) -> str:
+        """Get or create the responses file for a dataset."""
+        if dataset_name not in self._responses_files:
+            # Create new file for this dataset
+            safe_name = dataset_name.replace("/", "_").replace("\\", "_")
+            file_path = os.path.join(self._responses_dir, f"{safe_name}.jsonl")
+            self._responses_files[dataset_name] = file_path
+
+            # Write header
+            header = {
+                "_type": "header",
+                "model_name": self.model.name,
+                "dataset": dataset_name,
+                "model_config": {
+                    "model_type": self.model.config.model_type,
+                    "model_name": self.model.config.model_name,
+                    "temperature": self.model.config.temperature,
+                    "max_new_tokens": self.model.config.max_new_tokens,
+                },
+                "start_time": datetime.now().isoformat(),
+            }
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(json.dumps(header, ensure_ascii=False) + '\n')
+
+        return self._responses_files[dataset_name]
+
+    def _save_response_realtime(self, dataset_name: str, result: DetailedResult) -> None:
+        """Save a single response to the dataset-specific file in real-time."""
+        if not self.save_responses or not self._responses_dir:
+            return
+
+        file_path = self._get_responses_file(dataset_name)
+
+        response_entry = {
+            "task_id": result.task_id,
+            "poem_id": result.poem_id,
+            "prompt": result.prompt,
+            "response": result.response,
+            "correct_answer": result.correct_answer,
+            "parsed_answer": result.parsed_answer,
+            "is_valid_format": result.is_valid_format,
+            "is_correct": result.is_correct,
+            "success": result.success,
+            "latency": result.latency,
+            "tokens_used": result.tokens_used,
+            "timestamp": datetime.now().isoformat(),
+        }
+        if result.error_message:
+            response_entry["error_message"] = result.error_message
+
+        with open(file_path, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(response_entry, ensure_ascii=False) + '\n')
 
     def evaluate_sample(self, sample: TaskSample) -> DetailedResult:
         """
@@ -114,6 +185,8 @@ class EvaluationPipeline:
         for sample in samples:
             result = self.evaluate_sample(sample)
             self.metrics_calculator.add_result(dataset_name, result)
+            # Save response in real-time if enabled
+            self._save_response_realtime(dataset_name, result)
 
         self.metrics_calculator.finalize()
         return self.metrics_calculator.dataset_metrics[dataset_name]
@@ -293,7 +366,8 @@ def run_evaluation(
     max_samples: Optional[int] = None,
     sample_n: Optional[int] = None,
     seed: int = DEFAULT_SEED,
-    save_results: bool = True
+    save_results: bool = True,
+    save_responses: bool = False
 ) -> Dict[str, Any]:
     """
     Convenience function to run evaluation.
@@ -307,6 +381,7 @@ def run_evaluation(
         sample_n: Number of samples to randomly sample per dataset.
         seed: Random seed for sampling (default: 1127).
         save_results: Whether to save results.
+        save_responses: Whether to save responses in real-time.
 
     Returns:
         Evaluation summary.
@@ -316,7 +391,7 @@ def run_evaluation(
         model.load()
 
     # Create pipeline
-    pipeline = EvaluationPipeline(model, data_dir, output_dir)
+    pipeline = EvaluationPipeline(model, data_dir, output_dir, save_responses=save_responses)
 
     # Run evaluation
     if datasets:
