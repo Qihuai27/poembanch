@@ -115,6 +115,10 @@ class ResponseParser:
         """
         Parse and validate multiple choice response.
 
+        Only accepts:
+        1. Response starting with a single digit (ideal format)
+        2. Number appearing after "答案" keyword
+
         Returns:
             Tuple of (parsed_answer, is_valid_format, is_correct)
         """
@@ -125,43 +129,28 @@ class ResponseParser:
         correct_answer = sample.correct_answer
 
         # Strategy 1: Check if response starts with a single digit (ideal format)
+        # Match digit at the very beginning, optionally followed by punctuation/space
         first_line = response.split('\n')[0].strip()
+        match = re.match(r'^([1-' + str(num_choices) + r'])\s*[\.。、,，:：]?\s*', first_line)
+        if match:
+            choice = match.group(1)
+            is_correct = choice == correct_answer
+            return choice, True, is_correct
 
-        # Check for clean single digit answer
-        if first_line.isdigit() and len(first_line) == 1:
-            choice = int(first_line)
-            if 1 <= choice <= num_choices:
-                is_correct = str(choice) == correct_answer
-                return str(choice), True, is_correct
-
-        # Strategy 2: Look for "答案：X" or "答案是X" pattern
+        # Strategy 2: Look for "答案" keyword followed by a number
+        # Patterns: "答案：X", "答案是X", "答案为X", "答案X"
         patterns = [
-            r'答案[:：]\s*([1-' + str(num_choices) + r'])\b',
-            r'答案[是为]?\s*[:：]?\s*([1-' + str(num_choices) + r'])\b',
-            r'^([1-' + str(num_choices) + r'])[\.。\s]*$',
+            r'答案\s*[:：]\s*([1-' + str(num_choices) + r'])\b',
+            r'答案\s*[是为]\s*[:：]?\s*([1-' + str(num_choices) + r'])\b',
+            r'答案\s*([1-' + str(num_choices) + r'])\b',
         ]
 
         for pattern in patterns:
-            match = re.search(pattern, response, re.MULTILINE)
+            match = re.search(pattern, response)
             if match:
                 choice = match.group(1)
                 is_correct = choice == correct_answer
                 return choice, True, is_correct
-
-        # Strategy 3: Extract first valid digit from response
-        # This is less strict - still considered valid if we find a reasonable answer
-        digits = re.findall(r'\b([1-' + str(num_choices) + r'])\b', response)
-        if digits:
-            choice = digits[0]
-            is_correct = choice == correct_answer
-            return choice, True, is_correct
-
-        # Strategy 4: Any digit in range (least strict)
-        all_digits = re.findall(r'\d+', response)
-        for d in all_digits:
-            if len(d) == 1 and 1 <= int(d) <= num_choices:
-                is_correct = d == correct_answer
-                return d, True, is_correct
 
         # No valid answer found - instruction not followed
         return "", False, False
