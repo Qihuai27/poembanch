@@ -116,8 +116,9 @@ class ResponseParser:
         Parse and validate multiple choice response.
 
         Only accepts:
-        1. Response starting with a single digit (ideal format)
-        2. Number appearing after "答案" keyword
+        1. First 3 tokens contain a standalone digit (开头直接作答)
+        2. Last 3 tokens contain digit + terminator (结尾总结)
+        3. Number appearing after "答案" keyword
 
         Returns:
             Tuple of (parsed_answer, is_valid_format, is_correct)
@@ -127,28 +128,50 @@ class ResponseParser:
         response = response.strip()
         num_choices = len(sample.choices)
         correct_answer = sample.correct_answer
+        valid_digits = '[1-' + str(num_choices) + ']'
 
-        # Strategy 1: Check if response starts with a single digit (ideal format)
-        # Match digit at the very beginning, optionally followed by punctuation/space
-        first_line = response.split('\n')[0].strip()
-        match = re.match(r'^([1-' + str(num_choices) + r'])\s*[\.。、,，:：]?\s*', first_line)
+        # Strategy 1: Check first 3 tokens for standalone digit (开头直接作答)
+        # Only match if digit is standalone (not part of "1. 选项内容" pattern)
+        first_chars = response[:3] if len(response) >= 3 else response
+        # Match: digit at start, optionally followed by terminator, then end or whitespace
+        # Valid: "1", "2。", "3\n"
+        # Invalid: "1. 蝶恋花" (digit followed by content)
+        match = re.match(r'^(' + valid_digits + r')([。.，,、：:\s]?)$', first_chars.strip())
         if match:
             choice = match.group(1)
             is_correct = choice == correct_answer
             return choice, True, is_correct
 
-        # Strategy 2: Look for "答案" keyword followed by a number
+        # Also check if response starts with just a digit on its own line
+        first_line = response.split('\n')[0].strip()
+        if re.match(r'^' + valid_digits + r'[。.，,、：:\s]*$', first_line):
+            choice = first_line[0]
+            is_correct = choice == correct_answer
+            return choice, True, is_correct
+
+        # Strategy 2: Check last 3 tokens for digit + terminator (结尾总结)
+        # Valid patterns: "1。", "2.", "3", "是1", "为2" at the very end
+        last_chars = response[-3:] if len(response) >= 3 else response
+        # Match digit followed by optional terminator at the end
+        match = re.search(r'(' + valid_digits + r')[。.，,、：:\s]*$', last_chars)
+        if match:
+            choice = match.group(1)
+            is_correct = choice == correct_answer
+            return choice, True, is_correct
+
+        # Strategy 3: Look for "答案" keyword followed by a number
         # Patterns: "答案：X", "答案是X", "答案为X", "答案X"
+        # Use findall and take the LAST match to handle CoT responses
         patterns = [
-            r'答案\s*[:：]\s*([1-' + str(num_choices) + r'])\b',
-            r'答案\s*[是为]\s*[:：]?\s*([1-' + str(num_choices) + r'])\b',
-            r'答案\s*([1-' + str(num_choices) + r'])\b',
+            r'答案\s*[:：]\s*(' + valid_digits + r')\b',
+            r'答案\s*[是为]\s*[:：]?\s*(' + valid_digits + r')\b',
+            r'答案\s*(' + valid_digits + r')\b',
         ]
 
         for pattern in patterns:
-            match = re.search(pattern, response)
-            if match:
-                choice = match.group(1)
+            matches = re.findall(pattern, response)
+            if matches:
+                choice = matches[-1]  # Take the LAST match
                 is_correct = choice == correct_answer
                 return choice, True, is_correct
 
